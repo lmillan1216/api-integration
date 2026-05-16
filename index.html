@@ -1,0 +1,1648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShieldWatch API Integration Playbook — Luis Millan</title>
+<style>
+/* ── reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary:   #0b5fff;
+  --primary-dk:#004ad7;
+  --success:   #28a745;
+  --warning:   #856404;
+  --warning-bg:#fff3cd;
+  --danger:    #da1414;
+  --info:      #17a2b8;
+  --muted:     #6b6c7e;
+  --border:    #dee2e6;
+  --gray-100:  #f8f9fa;
+  --gray-200:  #f1f2f5;
+  --dark:      #272833;
+  --body:      #212529;
+  --font:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono:      SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --toc-w:     240px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--body);
+  background: #f1f2f5;
+  display: flex;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: var(--mono);
+  font-size: .8125rem;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: .1rem .35rem;
+  border-radius: .2rem;
+}
+
+/* ── TOC sidebar ── */
+.toc {
+  width: var(--toc-w);
+  min-height: 100vh;
+  background: var(--dark);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 50;
+  padding-bottom: 2rem;
+}
+
+.toc-brand {
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: .5rem;
+}
+
+.toc-brand-name {
+  font-weight: 700;
+  font-size: .9375rem;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.toc-brand-sub {
+  font-size: .6875rem;
+  color: rgba(255,255,255,.4);
+  font-family: var(--mono);
+  margin-top: .25rem;
+}
+
+.toc-section-label {
+  padding: .875rem 1.25rem .25rem;
+  font-size: .625rem;
+  font-family: var(--mono);
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.toc a {
+  display: block;
+  padding: .4rem 1.25rem .4rem 1.25rem;
+  font-size: .8125rem;
+  color: rgba(255,255,255,.6);
+  text-decoration: none;
+  transition: color .12s, background .12s;
+  border-left: 2px solid transparent;
+}
+
+.toc a:hover {
+  color: #fff;
+  background: rgba(255,255,255,.05);
+  text-decoration: none;
+}
+
+.toc a.sub {
+  padding-left: 2rem;
+  font-size: .75rem;
+  color: rgba(255,255,255,.4);
+}
+
+.toc a.sub:hover { color: rgba(255,255,255,.75); }
+
+.toc a.active {
+  color: #74b4ff;
+  border-left-color: var(--primary);
+  background: rgba(11,95,255,.15);
+}
+
+/* ── main content ── */
+.main {
+  margin-left: var(--toc-w);
+  flex: 1;
+  padding: 0;
+}
+
+/* ── cover page ── */
+.cover {
+  background: var(--dark);
+  color: #fff;
+  padding: 4rem 3.5rem 3.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.cover-inner { position: relative; z-index: 1; }
+
+.cover-eyebrow {
+  font-family: var(--mono);
+  font-size: .75rem;
+  color: #74b4ff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.cover h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: .75rem;
+  letter-spacing: -.5px;
+}
+
+.cover h1 span { color: #74b4ff; }
+
+.cover-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255,255,255,.65);
+  max-width: 520px;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+.cover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding-top: 1.5rem;
+}
+
+.cover-meta-item { display: flex; flex-direction: column; gap: .25rem; }
+.cover-meta-label { font-size: .6875rem; font-family: var(--mono); color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: 1px; }
+.cover-meta-value { font-size: .9375rem; font-weight: 600; }
+
+.cover-tags { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.75rem; }
+.cover-tag {
+  font-size: .75rem;
+  font-family: var(--mono);
+  padding: .25rem .75rem;
+  border-radius: 50rem;
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.6);
+}
+
+/* ── content wrapper ── */
+.doc {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 2.5rem 3rem 4rem;
+}
+
+/* ── section ── */
+.section {
+  margin-bottom: 3rem;
+  scroll-margin-top: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: .875rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.section-num {
+  font-family: var(--mono);
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: #e8f0ff;
+  padding: .2rem .6rem;
+  border-radius: .25rem;
+  flex-shrink: 0;
+}
+
+h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 1.75rem 0 .75rem;
+}
+
+h4 {
+  font-size: .9375rem;
+  font-weight: 700;
+  color: var(--body);
+  margin: 1.25rem 0 .5rem;
+}
+
+p { margin-bottom: .875rem; color: #3d3f4e; }
+p:last-child { margin-bottom: 0; }
+
+ul, ol {
+  margin: .5rem 0 .875rem 1.5rem;
+  color: #3d3f4e;
+}
+
+li { margin-bottom: .25rem; }
+
+/* ── sub-section ── */
+.subsection { margin-bottom: 2rem; }
+
+/* ── code block ── */
+.code-block {
+  background: #1e2433;
+  border-radius: .375rem;
+  overflow: hidden;
+  margin: 1rem 0;
+  border: 1px solid #2d3748;
+}
+
+.code-header {
+  background: #141b2d;
+  padding: .5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  border-bottom: 1px solid #2d3748;
+}
+
+.code-title {
+  font-family: var(--mono);
+  font-size: .75rem;
+  color: rgba(255,255,255,.5);
+}
+
+.code-lang {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: .625rem;
+  padding: .125rem .5rem;
+  border-radius: .2rem;
+  background: rgba(59,130,246,.2);
+  color: #74b4ff;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+pre {
+  padding: 1rem 1.25rem;
+  font-family: var(--mono);
+  font-size: .8125rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  color: #c9d1d9;
+  margin: 0;
+}
+
+.hl-method-get    { color: #56d364; font-weight: 700; }
+.hl-method-post   { color: #79c0ff; font-weight: 700; }
+.hl-method-patch  { color: #e3b341; font-weight: 700; }
+.hl-method-delete { color: #ff7b72; font-weight: 700; }
+.hl-url    { color: #a5d6ff; }
+.hl-key    { color: #ff7b72; }
+.hl-str    { color: #a5d6ff; }
+.hl-num    { color: #79c0ff; }
+.hl-bool   { color: #56d364; }
+.hl-comment{ color: #8b949e; font-style: italic; }
+.hl-tag    { color: #7ee787; }
+.hl-attr   { color: #e3b341; }
+
+/* ── HTTP method badges ── */
+.method {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .6875rem;
+  font-weight: 700;
+  padding: .15rem .55rem;
+  border-radius: .2rem;
+  letter-spacing: .5px;
+}
+
+.method-get    { background: #d1fae5; color: #065f46; }
+.method-post   { background: #dbeafe; color: #1e40af; }
+.method-patch  { background: #fef3c7; color: #92400e; }
+.method-delete { background: #fee2e2; color: #991b1b; }
+.method-put    { background: #ede9fe; color: #5b21b6; }
+
+/* ── endpoint table ── */
+.endpoint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+  margin: .875rem 0;
+  background: #fff;
+  border-radius: .375rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+.endpoint-table th {
+  background: var(--gray-200);
+  padding: .625rem .875rem;
+  text-align: left;
+  font-size: .75rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+}
+
+.endpoint-table td {
+  padding: .625rem .875rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.endpoint-table tr:last-child td { border-bottom: none; }
+.endpoint-table tr:hover td { background: var(--gray-100); }
+
+.endpoint-path {
+  font-family: var(--mono);
+  font-size: .8125rem;
+  color: #1e40af;
+}
+
+.endpoint-desc { color: var(--muted); font-size: .8125rem; }
+
+/* ── callout boxes ── */
+.callout {
+  border-radius: .375rem;
+  padding: .875rem 1rem;
+  margin: 1rem 0;
+  font-size: .875rem;
+  border-left: 4px solid;
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+}
+
+.callout-icon { flex-shrink: 0; font-size: 1rem; margin-top: .05rem; }
+.callout-body { flex: 1; }
+.callout-title { font-weight: 700; margin-bottom: .25rem; }
+
+.callout.info    { background: #e8f4ff; border-color: var(--primary); color: #004085; }
+.callout.success { background: #d4edda; border-color: var(--success); color: #155724; }
+.callout.warning { background: var(--warning-bg); border-color: #f59e0b; color: #92400e; }
+.callout.danger  { background: #f8d7da; border-color: var(--danger); color: #721c24; }
+
+/* ── schema table ── */
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8125rem;
+  margin: .875rem 0;
+  background: #fff;
+  border-radius: .375rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.schema-table th {
+  background: var(--gray-200);
+  padding: .5rem .75rem;
+  text-align: left;
+  font-size: .6875rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.schema-table td {
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.schema-table tr:last-child td { border-bottom: none; }
+
+.field-name { font-family: var(--mono); color: #1e40af; font-weight: 600; }
+.field-type { font-family: var(--mono); color: var(--muted); font-size: .75rem; }
+.field-req  { font-size: .625rem; font-family: var(--mono); padding: .1rem .35rem; border-radius: 50rem; }
+.req-yes    { background: #fee2e2; color: #991b1b; }
+.req-no     { background: var(--gray-200); color: var(--muted); }
+
+/* ── flow diagram ── */
+.flow-diagram {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: .375rem;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  font-family: var(--mono);
+  font-size: .8125rem;
+  line-height: 2;
+  color: var(--dark);
+  overflow-x: auto;
+}
+
+.flow-actor   { font-weight: 700; color: var(--primary); }
+.flow-action  { color: var(--muted); }
+.flow-arrow   { color: var(--muted); }
+.flow-label   { color: var(--success); font-size: .75rem; }
+.flow-note    { color: var(--warning); font-style: italic; }
+
+/* ── status badges ── */
+.status-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .6875rem;
+  font-weight: 700;
+  padding: .15rem .5rem;
+  border-radius: .2rem;
+}
+
+.s-2xx { background: #d1fae5; color: #065f46; }
+.s-4xx { background: #fef3c7; color: #92400e; }
+.s-5xx { background: #fee2e2; color: #991b1b; }
+
+/* ── divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2rem 0;
+}
+
+/* ── badge row ── */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: .75rem 0;
+}
+
+.tag {
+  font-size: .75rem;
+  font-family: var(--mono);
+  padding: .2rem .6rem;
+  border-radius: 50rem;
+  background: #e8f0ff;
+  color: var(--primary);
+  border: 1px solid #c7d9ff;
+}
+
+/* ── two-col layout ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin: 1rem 0;
+}
+
+.info-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: .375rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+.info-card-title {
+  font-weight: 700;
+  font-size: .875rem;
+  margin-bottom: .5rem;
+  color: var(--dark);
+}
+
+.info-card p { font-size: .8125rem; color: var(--muted); }
+
+/* ── footer ── */
+.doc-footer {
+  text-align: center;
+  font-size: .75rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  padding: 1.5rem 0 3rem;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+
+/* ── print styles ── */
+@media print {
+  body { background: #fff; display: block; }
+  .toc { display: none; }
+  .main { margin-left: 0; }
+  .cover { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .code-block { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .section { page-break-inside: avoid; }
+  .doc { padding: 1.5rem 2rem; max-width: 100%; }
+  .callout { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+
+/* ── responsive ── */
+@media (max-width: 900px) {
+  .toc { display: none; }
+  .main { margin-left: 0; }
+  .doc { padding: 1.5rem; }
+  .two-col { grid-template-columns: 1fr; }
+  .cover { padding: 2rem 1.5rem; }
+  .cover h1 { font-size: 1.875rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── TOC Sidebar ── -->
+<nav class="toc">
+  <div class="toc-brand">
+    <div class="toc-brand-name">ShieldWatch<br>API Playbook</div>
+    <div class="toc-brand-sub">v2.2 · May 2026</div>
+  </div>
+
+  <div class="toc-section-label">Contents</div>
+  <a href="#overview">1. Overview</a>
+  <a href="#auth" class="sub">2. Authentication</a>
+  <a href="#auth-apikey" class="sub">— API Keys</a>
+  <a href="#auth-oauth" class="sub">— OAuth 2.0</a>
+  <a href="#auth-jwt" class="sub">— JWT Bearer</a>
+  <a href="#auth-saml" class="sub">— SAML 2.0</a>
+  <a href="#auth-oidc" class="sub">— OIDC</a>
+  <a href="#endpoints">3. Core Endpoints</a>
+  <a href="#ep-identity" class="sub">— Identity</a>
+  <a href="#ep-alerts" class="sub">— Alerts</a>
+  <a href="#ep-breaches" class="sub">— Breaches</a>
+  <a href="#ep-credit" class="sub">— Credit</a>
+  <a href="#ep-members" class="sub">— Members</a>
+  <a href="#widget">4. Widget &amp; Embed</a>
+  <a href="#data-ops">5. Data Import / Export</a>
+  <a href="#webhooks">6. Webhooks</a>
+  <a href="#models">7. Data Models</a>
+  <a href="#errors">8. Error Handling</a>
+  <a href="#limits">9. Rate Limits &amp; SLAs</a>
+  <a href="#security">10. Security</a>
+  <a href="#appendix">Appendix</a>
+
+  <div class="toc-section-label" style="margin-top:1.5rem">Author</div>
+  <a href="#" style="font-size:.75rem;color:rgba(255,255,255,.5);padding:.3rem 1.25rem">Luis Millan</a>
+  <a href="#" style="font-size:.75rem;color:rgba(255,255,255,.35);padding:.3rem 1.25rem">Solution Engineer Portfolio</a>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Cover -->
+  <div class="cover">
+    <div class="cover-inner">
+      <div class="cover-eyebrow">Solution Engineer Portfolio · API Integration</div>
+      <h1>ShieldWatch Identity API<br><span>Integration Playbook</span></h1>
+      <div class="cover-subtitle">
+        A complete technical guide for integrating the ShieldWatch Identity Protection API — covering authentication, SSO, RESTful endpoints, widget embedding, data operations, and webhooks.
+      </div>
+      <div class="cover-tags">
+        <span class="cover-tag">RESTful API</span>
+        <span class="cover-tag">OAuth 2.0</span>
+        <span class="cover-tag">SAML 2.0</span>
+        <span class="cover-tag">OIDC</span>
+        <span class="cover-tag">JWT</span>
+        <span class="cover-tag">iframe / Widget</span>
+        <span class="cover-tag">Webhooks</span>
+        <span class="cover-tag">JSON</span>
+      </div>
+      <div class="cover-meta">
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Author</span>
+          <span class="cover-meta-value">Luis Millan</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Role</span>
+          <span class="cover-meta-value">Solution Engineer</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Version</span>
+          <span class="cover-meta-value">v2.2</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Date</span>
+          <span class="cover-meta-value">May 2026</span>
+        </div>
+        <div class="cover-meta-item">
+          <span class="cover-meta-label">Product</span>
+          <span class="cover-meta-value">ShieldWatch Identity API</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc">
+
+    <!-- ── 1. OVERVIEW ── -->
+    <div class="section" id="overview">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2>Overview</h2>
+      </div>
+
+      <p>The <strong>ShieldWatch Identity API</strong> is a RESTful API enabling partners, employers, and enterprise clients to integrate identity protection services directly into their platforms. Common integration patterns include employee benefit portals, HR platforms, financial institution dashboards, and white-labeled consumer identity products.</p>
+
+      <p>This playbook covers everything needed to go from zero to a fully operational integration — from obtaining credentials to processing real-time webhook alerts.</p>
+
+      <h3>Base URLs</h3>
+      <table class="endpoint-table">
+        <thead><tr><th>Environment</th><th>Base URL</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>sandbox</code></td><td class="endpoint-path">https://api-sandbox.shieldwatch.io/v2</td><td class="endpoint-desc">Full feature set, mock data, no billing</td></tr>
+          <tr><td><code>production</code></td><td class="endpoint-path">https://api.shieldwatch.io/v2</td><td class="endpoint-desc">Live data, SLA-backed</td></tr>
+        </tbody>
+      </table>
+
+      <h3>API Design Principles</h3>
+      <ul>
+        <li><strong>RESTful</strong> — standard HTTP verbs (GET, POST, PATCH, DELETE) with resource-based URL paths</li>
+        <li><strong>JSON</strong> — all request and response bodies are <code>application/json</code></li>
+        <li><strong>Versioned</strong> — major version in URL path (<code>/v2/</code>); non-breaking changes are additive</li>
+        <li><strong>Idempotent writes</strong> — POST endpoints accept an <code>Idempotency-Key</code> header (UUID v4 recommended) to prevent duplicate operations; keys are honored for 24 hours</li>
+        <li><strong>Pagination</strong> — list endpoints use cursor-based pagination via <code>after</code> / <code>before</code> parameters</li>
+      </ul>
+
+      <div class="two-col">
+        <div class="info-card">
+          <div class="info-card-title">Request format</div>
+          <p>Content-Type: <code>application/json</code><br>Accept: <code>application/json</code></p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Timestamps</div>
+          <p>All timestamps are ISO 8601 UTC strings, e.g. <code>2026-05-16T14:30:00Z</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. AUTHENTICATION ── -->
+    <div class="section" id="auth">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2>Authentication</h2>
+      </div>
+
+      <p>ShieldWatch supports four authentication methods to accommodate different integration patterns — from simple server-to-server API calls to full enterprise SSO deployments.</p>
+
+      <!-- 2.1 API Keys -->
+      <div class="subsection" id="auth-apikey">
+        <h3>2.1 API Key Authentication</h3>
+        <p>The simplest method. Suitable for server-to-server integrations where a human user session is not required. Pass your API key in the <code>X-API-Key</code> header.</p>
+
+        <div class="callout info">
+          <div class="callout-icon">ℹ️</div>
+          <div class="callout-body">
+            <div class="callout-title">Scope</div>
+            API keys are scoped to your organization account and carry full permissions. Never expose API keys in client-side code or version control.
+          </div>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">API Key Request</span><span class="code-lang">HTTP</span></div>
+          <pre><span class="hl-method-get">GET</span> <span class="hl-url">/v2/alerts</span> HTTP/1.1
+Host: api.shieldwatch.io
+<span class="hl-attr">X-API-Key</span>: sw_live_4x8mK2pQnRvTzWxL9YdBcEfGhJ3sNuVo
+<span class="hl-attr">Accept</span>: application/json</pre>
+        </div>
+      </div>
+
+      <!-- 2.2 OAuth 2.0 -->
+      <div class="subsection" id="auth-oauth">
+        <h3>2.2 OAuth 2.0 — Client Credentials</h3>
+        <p>Recommended for server-to-server integrations that require scoped access. Exchange your <code>client_id</code> and <code>client_secret</code> for a short-lived access token.</p>
+
+        <h4>Token Request</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">POST /v2/auth/token</span><span class="code-lang">HTTP</span></div>
+          <pre><span class="hl-method-post">POST</span> <span class="hl-url">/v2/auth/token</span> HTTP/1.1
+Host: api.shieldwatch.io
+<span class="hl-attr">Content-Type</span>: application/x-www-form-urlencoded
+<span class="hl-attr">Authorization</span>: Basic <span class="hl-str">base64(client_id:client_secret)</span>
+
+<span class="hl-key">grant_type</span>=client_credentials
+&amp;<span class="hl-key">scope</span>=identity%3Aread+alerts%3Aread+members%3Awrite</pre>
+        </div>
+
+        <h4>Token Response</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">200 OK</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"access_token"</span>:  <span class="hl-str">"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+  <span class="hl-key">"token_type"</span>:    <span class="hl-str">"Bearer"</span>,
+  <span class="hl-key">"expires_in"</span>:   <span class="hl-num">3600</span>,
+  <span class="hl-key">"scope"</span>:        <span class="hl-str">"identity:read alerts:read members:write"</span>
+}</pre>
+        </div>
+
+        <h4>Available Scopes</h4>
+        <table class="schema-table">
+          <thead><tr><th>Scope</th><th>Access Granted</th></tr></thead>
+          <tbody>
+            <tr><td><span class="field-name">identity:read</span></td><td>Read identity monitoring data and scores</td></tr>
+            <tr><td><span class="field-name">identity:write</span></td><td>Trigger on-demand scans and update monitoring settings</td></tr>
+            <tr><td><span class="field-name">alerts:read</span></td><td>Read and list alerts</td></tr>
+            <tr><td><span class="field-name">alerts:write</span></td><td>Dismiss or update alert status</td></tr>
+            <tr><td><span class="field-name">breaches:read</span></td><td>Access breach history and details</td></tr>
+            <tr><td><span class="field-name">credit:read</span></td><td>Read credit score and inquiry data</td></tr>
+            <tr><td><span class="field-name">members:read</span></td><td>Read member/subscriber records</td></tr>
+            <tr><td><span class="field-name">members:write</span></td><td>Create, update, and deactivate members</td></tr>
+            <tr><td><span class="field-name">credit:write</span></td><td>Initiate credit freezes and update credit preferences</td></tr>
+            <tr><td><span class="field-name">widget:token</span></td><td>Exchange tokens for widget embed sessions</td></tr>
+            <tr><td><span class="field-name">webhooks:manage</span></td><td>Register and manage webhook endpoints</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 2.3 JWT Bearer -->
+      <div class="subsection" id="auth-jwt">
+        <h3>2.3 JWT Bearer Token</h3>
+        <p>After obtaining an access token via OAuth 2.0 or SSO, include it in every subsequent request using the <code>Authorization</code> header.</p>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Authenticated Request</span><span class="code-lang">HTTP</span></div>
+          <pre><span class="hl-method-get">GET</span> <span class="hl-url">/v2/alerts?status=unread&amp;severity=high</span> HTTP/1.1
+Host: api.shieldwatch.io
+<span class="hl-attr">Authorization</span>: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+<span class="hl-attr">Accept</span>: application/json</pre>
+        </div>
+
+        <h4>JWT Payload Structure</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Decoded JWT Payload</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"iss"</span>:    <span class="hl-str">"https://api.shieldwatch.io"</span>,
+  <span class="hl-key">"sub"</span>:    <span class="hl-str">"org_BenefitHub_4x8mK"</span>,
+  <span class="hl-key">"aud"</span>:    <span class="hl-str">"shieldwatch-api"</span>,
+  <span class="hl-key">"exp"</span>:    <span class="hl-num">1747522800</span>,
+  <span class="hl-key">"iat"</span>:    <span class="hl-num">1747519200</span>,
+  <span class="hl-key">"scope"</span>:  <span class="hl-str">"identity:read alerts:read members:write"</span>,
+  <span class="hl-key">"org_id"</span>: <span class="hl-str">"org_BenefitHub_4x8mK"</span>,
+  <span class="hl-key">"plan"</span>:   <span class="hl-str">"enterprise"</span>
+}</pre>
+        </div>
+      </div>
+
+      <!-- 2.4 SAML 2.0 -->
+      <div class="subsection" id="auth-saml">
+        <h3>2.4 SSO — SAML 2.0</h3>
+        <p>For enterprise partners with an existing Identity Provider (IdP) such as Okta, Microsoft Entra ID (formerly Azure AD), or Ping Identity. ShieldWatch acts as the SAML Service Provider (SP).</p>
+
+        <h4>Configuration Requirements</h4>
+        <table class="schema-table">
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td class="field-name">SP Entity ID</td><td><code>https://sso.shieldwatch.io/saml/metadata</code></td></tr>
+            <tr><td class="field-name">ACS URL</td><td><code>https://sso.shieldwatch.io/saml/acs</code></td></tr>
+            <tr><td class="field-name">NameID Format</td><td><code>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</code></td></tr>
+            <tr><td class="field-name">Binding</td><td>HTTP-POST</td></tr>
+            <tr><td class="field-name">Signature Algorithm</td><td>RSA-SHA256</td></tr>
+          </tbody>
+        </table>
+
+        <h4>SAML Attribute Mapping</h4>
+        <table class="schema-table">
+          <thead><tr><th>SAML Attribute</th><th>ShieldWatch Field</th><th>Required</th></tr></thead>
+          <tbody>
+            <tr><td class="field-name">email</td><td><code>user.email</code></td><td><span class="field-req req-yes">YES</span></td></tr>
+            <tr><td class="field-name">firstName</td><td><code>user.first_name</code></td><td><span class="field-req req-yes">YES</span></td></tr>
+            <tr><td class="field-name">lastName</td><td><code>user.last_name</code></td><td><span class="field-req req-yes">YES</span></td></tr>
+            <tr><td class="field-name">employeeId</td><td><code>user.external_id</code></td><td><span class="field-req req-no">NO</span></td></tr>
+            <tr><td class="field-name">groups</td><td><code>user.plan_tier</code></td><td><span class="field-req req-no">NO</span></td></tr>
+          </tbody>
+        </table>
+
+        <h4>SAML Authentication Flow</h4>
+        <div class="flow-diagram">
+<span class="flow-actor">User</span>         <span class="flow-arrow">──→</span>  <span class="flow-actor">Partner Portal</span>  <span class="flow-action">: clicks "Identity Protection"</span>
+<span class="flow-actor">Partner Portal</span>  <span class="flow-arrow">──→</span>  <span class="flow-actor">ShieldWatch SP</span>  <span class="flow-action">: SAML AuthnRequest (redirect)</span>
+<span class="flow-actor">ShieldWatch SP</span>  <span class="flow-arrow">──→</span>  <span class="flow-actor">IdP (Okta/Entra)</span>   <span class="flow-action">: redirect to IdP login</span>
+<span class="flow-actor">IdP</span>             <span class="flow-arrow">──→</span>  <span class="flow-actor">User</span>            <span class="flow-action">: present login form</span>
+<span class="flow-actor">User</span>            <span class="flow-arrow">──→</span>  <span class="flow-actor">IdP</span>             <span class="flow-action">: submits credentials / MFA</span>
+<span class="flow-actor">IdP</span>             <span class="flow-arrow">──→</span>  <span class="flow-actor">ShieldWatch ACS</span> <span class="flow-action">: HTTP-POST SAMLResponse</span>
+<span class="flow-actor">ShieldWatch</span>     <span class="flow-arrow">──→</span>  <span class="flow-actor">ShieldWatch</span>     <span class="flow-action">: validates assertion, provisions session</span>
+<span class="flow-actor">ShieldWatch</span>     <span class="flow-arrow">──→</span>  <span class="flow-actor">User</span>            <span class="flow-action">: redirects to dashboard with session cookie</span>
+        </div>
+      </div>
+
+      <!-- 2.5 OIDC -->
+      <div class="subsection" id="auth-oidc">
+        <h3>2.5 SSO — OpenID Connect (OIDC)</h3>
+        <p>For partners using OAuth 2.0-based identity providers. ShieldWatch supports the Authorization Code flow with PKCE for browser-based integrations and the Client Credentials flow for server-to-server token exchange.</p>
+
+        <h4>OIDC Configuration</h4>
+        <table class="schema-table">
+          <thead><tr><th>Endpoint</th><th>URL</th></tr></thead>
+          <tbody>
+            <tr><td class="field-name">Discovery</td><td><code>https://sso.shieldwatch.io/.well-known/openid-configuration</code></td></tr>
+            <tr><td class="field-name">Authorization</td><td><code>https://sso.shieldwatch.io/oauth/authorize</code></td></tr>
+            <tr><td class="field-name">Token</td><td><code>https://sso.shieldwatch.io/oauth/token</code></td></tr>
+            <tr><td class="field-name">UserInfo</td><td><code>https://sso.shieldwatch.io/oauth/userinfo</code></td></tr>
+            <tr><td class="field-name">JWKS</td><td><code>https://sso.shieldwatch.io/.well-known/jwks.json</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>Authorization Code + PKCE Flow</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Step 1 — Authorization Request</span><span class="code-lang">HTTP</span></div>
+          <pre><span class="hl-method-get">GET</span> <span class="hl-url">https://sso.shieldwatch.io/oauth/authorize</span>
+  ?response_type=<span class="hl-str">code</span>
+  &amp;client_id=<span class="hl-str">partner_BenefitHub_prod</span>
+  &amp;redirect_uri=<span class="hl-str">https%3A%2F%2Fapp.benefithub.com%2Fcallback</span>
+  &amp;scope=<span class="hl-str">openid+profile+email+identity%3Aread</span>
+  &amp;state=<span class="hl-str">xK9mP2qR</span>
+  &amp;code_challenge=<span class="hl-str">E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM</span>
+  &amp;code_challenge_method=<span class="hl-str">S256</span></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Step 2 — Token Exchange</span><span class="code-lang">HTTP</span></div>
+          <pre><span class="hl-method-post">POST</span> <span class="hl-url">https://sso.shieldwatch.io/oauth/token</span>
+<span class="hl-attr">Content-Type</span>: application/x-www-form-urlencoded
+
+<span class="hl-key">grant_type</span>=authorization_code
+&amp;<span class="hl-key">code</span>=SplxlOBeZQQYbYS6WxSbIA
+&amp;<span class="hl-key">redirect_uri</span>=https://app.benefithub.com/callback
+&amp;<span class="hl-key">client_id</span>=partner_BenefitHub_prod
+&amp;<span class="hl-key">code_verifier</span>=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk</pre>
+        </div>
+
+        <div class="callout success">
+          <div class="callout-icon">✅</div>
+          <div class="callout-body">
+            <div class="callout-title">PKCE Required (OAuth 2.1)</div>
+            All Authorization Code flows must use PKCE (RFC 7636) regardless of whether a client secret is present. This prevents authorization code interception attacks and aligns with OAuth 2.1 (draft-ietf-oauth-v2-1).
+          </div>
+        </div>
+
+        <div class="callout info">
+          <div class="callout-icon">ℹ️</div>
+          <div class="callout-body">
+            <div class="callout-title">Redirect URI Exact Matching</div>
+            Per OAuth 2.1, redirect URIs must match exactly — no partial path matching, wildcard subdomains, or localhost exceptions in production. Register each URI explicitly in the developer portal.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. ENDPOINTS ── -->
+    <div class="section" id="endpoints">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2>Core API Endpoints</h2>
+      </div>
+
+      <p>All endpoints require a valid bearer token with the appropriate scope. Responses follow a consistent envelope: top-level <code>data</code> for the payload, <code>meta</code> for pagination, and <code>error</code> for failures.</p>
+
+      <!-- Identity -->
+      <div class="subsection" id="ep-identity">
+        <h3>3.1 Identity Monitoring</h3>
+        <table class="endpoint-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td class="endpoint-path">/identity/{member_id}</td>
+              <td class="endpoint-desc">Get identity protection summary for a member</td>
+              <td><code>identity:read</code></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td class="endpoint-path">/identity/{member_id}/score</td>
+              <td class="endpoint-desc">Get protection score and contributing factors</td>
+              <td><code>identity:read</code></td>
+            </tr>
+            <tr>
+              <td><span class="method method-post">POST</span></td>
+              <td class="endpoint-path">/identity/{member_id}/scan</td>
+              <td class="endpoint-desc">Trigger an on-demand dark web scan</td>
+              <td><code>identity:write</code></td>
+            </tr>
+            <tr>
+              <td><span class="method method-get">GET</span></td>
+              <td class="endpoint-path">/identity/{member_id}/monitored-items</td>
+              <td class="endpoint-desc">List all items under monitoring (email, SSN, phone, etc.)</td>
+              <td><code>identity:read</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>GET /identity/{member_id} — Sample Response</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">200 OK</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"data"</span>: {
+    <span class="hl-key">"member_id"</span>:        <span class="hl-str">"mem_4x8mK2pQnR"</span>,
+    <span class="hl-key">"protection_score"</span>:  <span class="hl-num">74</span>,
+    <span class="hl-key">"score_tier"</span>:       <span class="hl-str">"fair"</span>,
+    <span class="hl-key">"active_alerts"</span>:    <span class="hl-num">3</span>,
+    <span class="hl-key">"breach_count"</span>:     <span class="hl-num">4</span>,
+    <span class="hl-key">"monitored_items"</span>:  <span class="hl-num">9</span>,
+    <span class="hl-key">"last_scan"</span>:        <span class="hl-str">"2026-05-16T03:00:00Z"</span>,
+    <span class="hl-key">"next_scan"</span>:        <span class="hl-str">"2026-05-17T03:00:00Z"</span>,
+    <span class="hl-key">"plan"</span>:             <span class="hl-str">"premium"</span>
+  }
+}</pre>
+        </div>
+      </div>
+
+      <!-- Alerts -->
+      <div class="subsection" id="ep-alerts">
+        <h3>3.2 Alerts</h3>
+        <table class="endpoint-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/alerts</td><td class="endpoint-desc">List alerts (filterable by member, severity, status)</td><td><code>alerts:read</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/alerts/{alert_id}</td><td class="endpoint-desc">Get a single alert by ID</td><td><code>alerts:read</code></td></tr>
+            <tr><td><span class="method method-patch">PATCH</span></td><td class="endpoint-path">/alerts/{alert_id}</td><td class="endpoint-desc">Update alert status (dismiss, resolve, snooze)</td><td><code>alerts:write</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/members/{id}/alerts</td><td class="endpoint-desc">List all alerts for a specific member</td><td><code>alerts:read</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>Query Parameters — GET /alerts</h4>
+        <table class="schema-table">
+          <thead><tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td class="field-name">severity</td><td class="field-type">string</td><td><code>all</code></td><td>Filter by <code>high</code>, <code>medium</code>, <code>low</code>, <code>info</code></td></tr>
+            <tr><td class="field-name">status</td><td class="field-type">string</td><td><code>all</code></td><td>Filter by <code>unread</code>, <code>read</code>, <code>dismissed</code></td></tr>
+            <tr><td class="field-name">member_id</td><td class="field-type">string</td><td>—</td><td>Filter to a specific member</td></tr>
+            <tr><td class="field-name">after</td><td class="field-type">string</td><td>—</td><td>Cursor for forward pagination</td></tr>
+            <tr><td class="field-name">limit</td><td class="field-type">integer</td><td><code>25</code></td><td>Page size, max 100</td></tr>
+          </tbody>
+        </table>
+
+        <h4>PATCH /alerts/{alert_id} — Update Status</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Request Body</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"status"</span>:  <span class="hl-str">"dismissed"</span>,    <span class="hl-comment">// "read" | "dismissed" | "resolved"</span>
+  <span class="hl-key">"note"</span>:    <span class="hl-str">"Confirmed fraudulent. Police report filed."</span>
+}</pre>
+        </div>
+      </div>
+
+      <!-- Breaches -->
+      <div class="subsection" id="ep-breaches">
+        <h3>3.3 Breach Notifications</h3>
+        <table class="endpoint-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/breaches</td><td class="endpoint-desc">List breach notifications (filterable by status, date)</td><td><code>breaches:read</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/breaches/{breach_id}</td><td class="endpoint-desc">Get breach detail including exposed fields and remediation</td><td><code>breaches:read</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/members/{id}/breaches</td><td class="endpoint-desc">List all breach exposures for a specific member</td><td><code>breaches:read</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Credit -->
+      <div class="subsection" id="ep-credit">
+        <h3>3.4 Credit Monitoring</h3>
+        <table class="endpoint-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/credit/{member_id}/score</td><td class="endpoint-desc">Get current credit score and trend data</td><td><code>credit:read</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/credit/{member_id}/inquiries</td><td class="endpoint-desc">List hard and soft credit inquiries</td><td><code>credit:read</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/credit/{member_id}/freeze</td><td class="endpoint-desc">Get credit freeze status across all three bureaus</td><td><code>credit:read</code></td></tr>
+            <tr><td><span class="method method-post">POST</span></td><td class="endpoint-path">/credit/{member_id}/freeze</td><td class="endpoint-desc">Initiate a credit freeze (all bureaus or specified)</td><td><code>credit:write</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>GET /credit/{member_id}/score — Sample Response</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">200 OK</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"data"</span>: {
+    <span class="hl-key">"score"</span>:          <span class="hl-num">712</span>,
+    <span class="hl-key">"max_score"</span>:      <span class="hl-num">850</span>,
+    <span class="hl-key">"tier"</span>:           <span class="hl-str">"good"</span>,
+    <span class="hl-key">"bureau"</span>:         <span class="hl-str">"equifax"</span>,
+    <span class="hl-key">"as_of"</span>:          <span class="hl-str">"2026-05-16T00:00:00Z"</span>,
+    <span class="hl-key">"change_30d"</span>:     <span class="hl-num">-5</span>,
+    <span class="hl-key">"factors"</span>: [
+      { <span class="hl-key">"name"</span>: <span class="hl-str">"payment_history"</span>,  <span class="hl-key">"score"</span>: <span class="hl-num">95</span>, <span class="hl-key">"weight"</span>: <span class="hl-str">"35%"</span> },
+      { <span class="hl-key">"name"</span>: <span class="hl-str">"amounts_owed"</span>,     <span class="hl-key">"score"</span>: <span class="hl-num">78</span>, <span class="hl-key">"weight"</span>: <span class="hl-str">"30%"</span> },
+      { <span class="hl-key">"name"</span>: <span class="hl-str">"credit_history"</span>,  <span class="hl-key">"score"</span>: <span class="hl-num">82</span>, <span class="hl-key">"weight"</span>: <span class="hl-str">"15%"</span> },
+      { <span class="hl-key">"name"</span>: <span class="hl-str">"new_credit"</span>,      <span class="hl-key">"score"</span>: <span class="hl-num">45</span>, <span class="hl-key">"weight"</span>: <span class="hl-str">"10%"</span> },
+      { <span class="hl-key">"name"</span>: <span class="hl-str">"credit_mix"</span>,      <span class="hl-key">"score"</span>: <span class="hl-num">70</span>, <span class="hl-key">"weight"</span>: <span class="hl-str">"10%"</span> }
+    ]
+  }
+}</pre>
+        </div>
+      </div>
+
+      <!-- Members -->
+      <div class="subsection" id="ep-members">
+        <h3>3.5 Member Management</h3>
+        <p>The Members API allows partners to manage their subscriber population — enrolling employees, updating records, and deactivating accounts — without using the ShieldWatch web portal.</p>
+
+        <table class="endpoint-table">
+          <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Scope</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/members</td><td class="endpoint-desc">List all members in your organization</td><td><code>members:read</code></td></tr>
+            <tr><td><span class="method method-post">POST</span></td><td class="endpoint-path">/members</td><td class="endpoint-desc">Enroll a new member</td><td><code>members:write</code></td></tr>
+            <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/members/{id}</td><td class="endpoint-desc">Get a single member record</td><td><code>members:read</code></td></tr>
+            <tr><td><span class="method method-patch">PATCH</span></td><td class="endpoint-path">/members/{id}</td><td class="endpoint-desc">Update member profile or plan tier</td><td><code>members:write</code></td></tr>
+            <tr><td><span class="method method-delete">DELETE</span></td><td class="endpoint-path">/members/{id}</td><td class="endpoint-desc">Deactivate member (data retained per retention policy)</td><td><code>members:write</code></td></tr>
+          </tbody>
+        </table>
+
+        <h4>POST /members — Enroll a Member</h4>
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">Request Body</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"email"</span>:       <span class="hl-str">"ldmillanjr@gmail.com"</span>,
+  <span class="hl-key">"first_name"</span>:  <span class="hl-str">"Luis"</span>,
+  <span class="hl-key">"last_name"</span>:   <span class="hl-str">"Millan"</span>,
+  <span class="hl-key">"phone"</span>:       <span class="hl-str">"+15550001234"</span>,
+  <span class="hl-key">"external_id"</span>: <span class="hl-str">"EMP-00421"</span>,         <span class="hl-comment">// your HR system ID</span>
+  <span class="hl-key">"plan"</span>:        <span class="hl-str">"premium"</span>,
+  <span class="hl-key">"send_welcome"</span>: <span class="hl-bool">true</span>
+}</pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header"><span class="code-title">201 Created</span><span class="code-lang">JSON</span></div>
+          <pre>{
+  <span class="hl-key">"data"</span>: {
+    <span class="hl-key">"member_id"</span>:   <span class="hl-str">"mem_7yN3kRvPmW"</span>,
+    <span class="hl-key">"email"</span>:       <span class="hl-str">"ldmillanjr@gmail.com"</span>,
+    <span class="hl-key">"status"</span>:      <span class="hl-str">"active"</span>,
+    <span class="hl-key">"plan"</span>:        <span class="hl-str">"premium"</span>,
+    <span class="hl-key">"enrolled_at"</span>: <span class="hl-str">"2026-05-16T14:30:00Z"</span>
+  }
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. WIDGET ── -->
+    <div class="section" id="widget">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2>Widget Embedding &amp; Token Exchange</h2>
+      </div>
+
+      <p>The ShieldWatch widget can be embedded directly into a partner portal via <code>&lt;iframe&gt;</code>, surfacing real-time identity alerts without redirecting users away. The widget authenticates via a short-lived session token exchanged server-side.</p>
+
+      <h3>4.1 Token Exchange Flow</h3>
+      <p>Your backend exchanges its OAuth access token for a user-scoped widget token. The widget token is single-use and expires in 15 minutes — it cannot be used for API calls.</p>
+
+      <div class="flow-diagram">
+<span class="flow-actor">Partner Backend</span>  <span class="flow-arrow">──→</span>  <span class="flow-actor">ShieldWatch API</span>  <span class="flow-action">: POST /widget/token (with member_id + Bearer)</span>
+<span class="flow-actor">ShieldWatch API</span>  <span class="flow-arrow">──→</span>  <span class="flow-actor">Partner Backend</span>  <span class="flow-action">: { widget_token, expires_in: 900 }</span>
+<span class="flow-actor">Partner Backend</span>  <span class="flow-arrow">──→</span>  <span class="flow-actor">Browser</span>          <span class="flow-action">: renders page with widget_token in HTML</span>
+<span class="flow-actor">Browser</span>          <span class="flow-arrow">──→</span>  <span class="flow-actor">iframe</span>           <span class="flow-action">: loads widget src URL with token param</span>
+<span class="flow-actor">iframe</span>           <span class="flow-arrow">──→</span>  <span class="flow-actor">ShieldWatch CDN</span>  <span class="flow-action">: validates token, renders member dashboard</span>
+      </div>
+
+      <h4>POST /v2/widget/token</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Request</span><span class="code-lang">HTTP</span></div>
+        <pre><span class="hl-method-post">POST</span> <span class="hl-url">/v2/widget/token</span>
+<span class="hl-attr">Authorization</span>: Bearer &lt;org-access-token&gt;
+<span class="hl-attr">Content-Type</span>: application/json
+
+{
+  <span class="hl-key">"member_id"</span>:    <span class="hl-str">"mem_7yN3kRvPmW"</span>,
+  <span class="hl-key">"return_url"</span>:   <span class="hl-str">"https://app.benefithub.com/dashboard"</span>,
+  <span class="hl-key">"theme"</span>:        <span class="hl-str">"light"</span>   <span class="hl-comment">// "light" | "dark" | "auto"</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Response</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"widget_token"</span>: <span class="hl-str">"wt_9Xm2K8pLqRvT4nBcYzDw"</span>,
+  <span class="hl-key">"embed_url"</span>:    <span class="hl-str">"https://widget.shieldwatch.io/v2?token=wt_9Xm2K8..."</span>,
+  <span class="hl-key">"expires_in"</span>:  <span class="hl-num">900</span>
+}</pre>
+      </div>
+
+      <h3>4.2 Embedding the Widget</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">HTML Embed</span><span class="code-lang">HTML</span></div>
+        <pre><span class="hl-comment">&lt;!-- embed_url from POST /widget/token response --&gt;</span>
+<span class="hl-tag">&lt;iframe</span>
+  <span class="hl-attr">src</span>=<span class="hl-str">"https://widget.shieldwatch.io/v2?token=wt_9Xm2K8..."</span>
+  <span class="hl-attr">id</span>=<span class="hl-str">"sw-widget"</span>
+  <span class="hl-attr">width</span>=<span class="hl-str">"100%"</span>
+  <span class="hl-attr">height</span>=<span class="hl-str">"420"</span>
+  <span class="hl-attr">style</span>=<span class="hl-str">"border:none;"</span>
+  <span class="hl-attr">sandbox</span>=<span class="hl-str">"allow-scripts allow-same-origin allow-top-navigation-by-user-activation"</span>
+  <span class="hl-attr">loading</span>=<span class="hl-str">"lazy"</span>
+  <span class="hl-attr">referrerpolicy</span>=<span class="hl-str">"strict-origin-when-cross-origin"</span>
+  <span class="hl-attr">title</span>=<span class="hl-str">"ShieldWatch Identity Protection"</span>
+<span class="hl-tag">&gt;&lt;/iframe&gt;</span></pre>
+      </div>
+
+      <h3>4.3 postMessage Event API</h3>
+      <p>The widget emits structured events to the host window for deep integration.</p>
+
+      <table class="schema-table">
+        <thead><tr><th>Event Type</th><th>Direction</th><th>Payload</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">SW_READY</td><td>Widget → Host</td><td>Widget loaded and authenticated</td></tr>
+          <tr><td class="field-name">SW_ALERT_CLICK</td><td>Widget → Host</td><td><code>{ alert_id, severity, title }</code></td></tr>
+          <tr><td class="field-name">SW_SCORE_CHANGE</td><td>Widget → Host</td><td><code>{ old_score, new_score, delta }</code></td></tr>
+          <tr><td class="field-name">SW_AUTH</td><td>Host → Widget</td><td><code>{ type: "SW_AUTH", token: "..." }</code></td></tr>
+          <tr><td class="field-name">SW_THEME</td><td>Host → Widget</td><td><code>{ theme: "light" | "dark" }</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Listening for Widget Events</span><span class="code-lang">JS</span></div>
+        <pre>window.addEventListener(<span class="hl-str">'message'</span>, (event) => {
+  <span class="hl-comment">// Always validate the origin</span>
+  if (event.origin !== <span class="hl-str">'https://widget.shieldwatch.io'</span>) return;
+
+  const { type, payload } = event.data;
+
+  if (type === <span class="hl-str">'SW_ALERT_CLICK'</span>) {
+    <span class="hl-comment">// Open alert detail in your own UI</span>
+    openAlertPanel(payload.alert_id);
+  }
+
+  if (type === <span class="hl-str">'SW_SCORE_CHANGE'</span>) {
+    updateScoreBadge(payload.new_score);
+  }
+});</pre>
+      </div>
+    </div>
+
+    <!-- ── 5. DATA IMPORT/EXPORT ── -->
+    <div class="section" id="data-ops">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2>Data Import &amp; Export</h2>
+      </div>
+
+      <p>For initial onboarding or ongoing HR system synchronization, ShieldWatch supports bulk member enrollment via CSV upload, JSON batch API, and direct HRIS connectors.</p>
+
+      <h3>5.1 Bulk CSV Import</h3>
+      <p>Upload a CSV file to enroll or update up to 50,000 members in a single operation.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">POST /v2/members/import</span><span class="code-lang">HTTP</span></div>
+        <pre><span class="hl-method-post">POST</span> <span class="hl-url">/v2/members/import</span>
+<span class="hl-attr">Authorization</span>: Bearer &lt;token&gt;
+<span class="hl-attr">Content-Type</span>: multipart/form-data
+
+--boundary
+<span class="hl-attr">Content-Disposition</span>: form-data; name="file"; filename="employees.csv"
+<span class="hl-attr">Content-Type</span>: text/csv
+
+[CSV content below]</pre>
+      </div>
+
+      <h4>Required CSV Schema</h4>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">employees.csv</span><span class="code-lang">CSV</span></div>
+        <pre><span class="hl-comment"># Required columns: email, first_name, last_name</span>
+<span class="hl-comment"># Optional: phone, external_id, plan, department, send_welcome</span>
+
+email,first_name,last_name,phone,external_id,plan,send_welcome
+ldmillanjr@gmail.com,Luis,Millan,+15550001234,EMP-00421,premium,true
+jsmith@company.com,Jane,Smith,+15550005678,EMP-00422,standard,true
+bjohnson@company.com,Bob,Johnson,,EMP-00423,premium,false</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Import Job Response — 202 Accepted</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"job_id"</span>:        <span class="hl-str">"job_Kx9mQ4pRvT"</span>,
+  <span class="hl-key">"status"</span>:        <span class="hl-str">"processing"</span>,
+  <span class="hl-key">"total_rows"</span>:    <span class="hl-num">1247</span>,
+  <span class="hl-key">"processed"</span>:    <span class="hl-num">0</span>,
+  <span class="hl-key">"errors"</span>:       <span class="hl-num">0</span>,
+  <span class="hl-key">"status_url"</span>:   <span class="hl-str">"/v2/jobs/job_Kx9mQ4pRvT"</span>,
+  <span class="hl-key">"webhook_sent"</span>: <span class="hl-bool">true</span>   <span class="hl-comment">// fires member.import.completed when done</span>
+}</pre>
+      </div>
+
+      <h3>5.2 JSON Batch API</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">POST /v2/members/batch</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"operation"</span>: <span class="hl-str">"upsert"</span>,   <span class="hl-comment">// "upsert" | "deactivate"</span>
+  <span class="hl-key">"members"</span>: [
+    {
+      <span class="hl-key">"external_id"</span>: <span class="hl-str">"EMP-00421"</span>,
+      <span class="hl-key">"email"</span>:       <span class="hl-str">"ldmillanjr@gmail.com"</span>,
+      <span class="hl-key">"first_name"</span>:  <span class="hl-str">"Luis"</span>,
+      <span class="hl-key">"last_name"</span>:   <span class="hl-str">"Millan"</span>,
+      <span class="hl-key">"plan"</span>:        <span class="hl-str">"premium"</span>
+    }
+    <span class="hl-comment">// ... up to 500 per request</span>
+  ]
+}</pre>
+      </div>
+
+      <h3>5.3 HRIS Connectors</h3>
+      <p>ShieldWatch provides pre-built connectors for major HR platforms to automate member lifecycle management — auto-enrolling new hires and deactivating terminated employees.</p>
+
+      <div class="badge-row">
+        <span class="tag">Workday</span>
+        <span class="tag">ADP Workforce Now</span>
+        <span class="tag">BambooHR</span>
+        <span class="tag">UKG Pro</span>
+        <span class="tag">SAP SuccessFactors</span>
+        <span class="tag">Rippling</span>
+        <span class="tag">Gusto</span>
+        <span class="tag">SFTP (generic)</span>
+      </div>
+
+      <h3>5.4 Data Export</h3>
+      <table class="endpoint-table">
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/reports/members</td><td class="endpoint-desc">Export full member roster as CSV or JSON</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/reports/alerts</td><td class="endpoint-desc">Export alert history with filters (date range, severity)</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td class="endpoint-path">/reports/utilization</td><td class="endpoint-desc">Portal engagement, active users, scan counts</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td class="endpoint-path">/reports/schedule</td><td class="endpoint-desc">Schedule automated recurring exports (daily, weekly, monthly)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── 6. WEBHOOKS ── -->
+    <div class="section" id="webhooks">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <h2>Webhooks &amp; Real-time Events</h2>
+      </div>
+
+      <p>Webhooks allow ShieldWatch to push event notifications to your server in real time — eliminating the need to poll the API. All webhook payloads are sent as HTTP POST requests with a JSON body.</p>
+
+      <h3>6.1 Registration</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">POST /v2/webhooks</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"url"</span>:    <span class="hl-str">"https://app.benefithub.com/webhooks/shieldwatch"</span>,
+  <span class="hl-key">"events"</span>: [
+    <span class="hl-str">"alert.created"</span>,
+    <span class="hl-str">"alert.high_risk"</span>,
+    <span class="hl-str">"breach.detected"</span>,
+    <span class="hl-str">"member.enrolled"</span>,
+    <span class="hl-str">"member.import.completed"</span>
+  ],
+  <span class="hl-key">"secret"</span>: <span class="hl-str">"whsec_your_signing_secret_here"</span>
+}</pre>
+      </div>
+
+      <h3>6.2 Event Catalog</h3>
+      <table class="schema-table">
+        <thead><tr><th>Event</th><th>Trigger</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">alert.created</td><td>Any new alert generated for a member</td><td>All</td></tr>
+          <tr><td class="field-name">alert.high_risk</td><td>High-severity alert created (dark web, fraud, new account)</td><td>High only</td></tr>
+          <tr><td class="field-name">breach.detected</td><td>Member's PII found in a newly indexed breach</td><td>High</td></tr>
+          <tr><td class="field-name">score.changed</td><td>Member's protection score increases or decreases</td><td>All</td></tr>
+          <tr><td class="field-name">member.enrolled</td><td>New member successfully activated</td><td>—</td></tr>
+          <tr><td class="field-name">member.deactivated</td><td>Member account deactivated</td><td>—</td></tr>
+          <tr><td class="field-name">member.import.completed</td><td>Bulk import job finished</td><td>—</td></tr>
+          <tr><td class="field-name">credit.inquiry.detected</td><td>New hard or soft inquiry on member's credit file</td><td>Hard only</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6.3 Payload Example — alert.high_risk</h3>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Webhook POST Body</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"id"</span>:         <span class="hl-str">"evt_8nPmK2xRvT4qBcYz"</span>,
+  <span class="hl-key">"type"</span>:       <span class="hl-str">"alert.high_risk"</span>,
+  <span class="hl-key">"created_at"</span>: <span class="hl-str">"2026-05-16T14:32:11Z"</span>,
+  <span class="hl-key">"data"</span>: {
+    <span class="hl-key">"alert_id"</span>:   <span class="hl-str">"alrt_Xk7mN3pQ"</span>,
+    <span class="hl-key">"member_id"</span>:  <span class="hl-str">"mem_7yN3kRvPmW"</span>,
+    <span class="hl-key">"severity"</span>:  <span class="hl-str">"high"</span>,
+    <span class="hl-key">"category"</span>:  <span class="hl-str">"dark_web_credential"</span>,
+    <span class="hl-key">"title"</span>:     <span class="hl-str">"Dark Web Credential Exposure"</span>,
+    <span class="hl-key">"source"</span>:    <span class="hl-str">"dark_web_scan"</span>,
+    <span class="hl-key">"detected_at"</span>: <span class="hl-str">"2026-05-16T14:31:55Z"</span>
+  }
+}</pre>
+      </div>
+
+      <h3>6.4 Signature Verification</h3>
+      <p>Every webhook request includes a <code>SW-Signature</code> header containing an HMAC-SHA256 signature. Always verify this before processing the payload.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Verify Signature (Node.js)</span><span class="code-lang">JS</span></div>
+        <pre>const crypto = require(<span class="hl-str">'crypto'</span>);
+
+function verifyWebhook(rawBody, signatureHeader, secret) {
+  const [version, receivedSig] = signatureHeader.split(<span class="hl-str">','</span>);
+  const timestamp = version.replace(<span class="hl-str">'t='</span>, <span class="hl-str">''</span>);
+
+  <span class="hl-comment">// Replay attack protection — reject if &gt; 5 minutes old</span>
+  const age = Date.now() / <span class="hl-num">1000</span> - parseInt(timestamp);
+  if (age > <span class="hl-num">300</span>) throw new Error(<span class="hl-str">'Webhook too old'</span>);
+
+  const payload  = `${timestamp}.${rawBody}`;
+  const expected = crypto
+    .createHmac(<span class="hl-str">'sha256'</span>, secret)
+    .update(payload)
+    .digest(<span class="hl-str">'hex'</span>);
+
+  const sig = receivedSig.replace(<span class="hl-str">'v1='</span>, <span class="hl-str">''</span>);
+  return crypto.timingSafeEqual(
+    Buffer.from(expected, <span class="hl-str">'hex'</span>),
+    Buffer.from(sig,      <span class="hl-str">'hex'</span>)
+  );
+}</pre>
+      </div>
+
+      <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+          <div class="callout-title">Retry Behavior</div>
+          ShieldWatch retries failed webhook deliveries (non-2xx or timeout) up to 5 times with exponential backoff: 5s → 30s → 2m → 10m → 1h. After 5 failures the endpoint is marked inactive and an alert is sent to the account owner.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 7. DATA MODELS ── -->
+    <div class="section" id="models">
+      <div class="section-header">
+        <span class="section-num">07</span>
+        <h2>Data Models</h2>
+      </div>
+
+      <h3>Member Object</h3>
+      <table class="schema-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">member_id</td><td class="field-type">string</td><td><span class="field-req req-no">NO</span></td><td>System-generated unique ID</td></tr>
+          <tr><td class="field-name">email</td><td class="field-type">string</td><td><span class="field-req req-yes">YES</span></td><td>Primary email address</td></tr>
+          <tr><td class="field-name">first_name</td><td class="field-type">string</td><td><span class="field-req req-yes">YES</span></td><td>Legal first name</td></tr>
+          <tr><td class="field-name">last_name</td><td class="field-type">string</td><td><span class="field-req req-yes">YES</span></td><td>Legal last name</td></tr>
+          <tr><td class="field-name">phone</td><td class="field-type">string</td><td><span class="field-req req-no">NO</span></td><td>E.164 format, e.g. +15550001234</td></tr>
+          <tr><td class="field-name">external_id</td><td class="field-type">string</td><td><span class="field-req req-no">NO</span></td><td>Your HR system employee ID</td></tr>
+          <tr><td class="field-name">plan</td><td class="field-type">string</td><td><span class="field-req req-yes">YES</span></td><td><code>standard</code> or <code>premium</code></td></tr>
+          <tr><td class="field-name">status</td><td class="field-type">string</td><td><span class="field-req req-no">NO</span></td><td><code>active</code>, <code>pending</code>, <code>deactivated</code></td></tr>
+          <tr><td class="field-name">enrolled_at</td><td class="field-type">datetime</td><td><span class="field-req req-no">NO</span></td><td>ISO 8601 UTC enrollment timestamp</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Alert Object</h3>
+      <table class="schema-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">alert_id</td><td class="field-type">string</td><td>Unique alert identifier</td></tr>
+          <tr><td class="field-name">member_id</td><td class="field-type">string</td><td>Member this alert belongs to</td></tr>
+          <tr><td class="field-name">severity</td><td class="field-type">string</td><td><code>high</code> | <code>medium</code> | <code>low</code> | <code>info</code></td></tr>
+          <tr><td class="field-name">category</td><td class="field-type">string</td><td>e.g. <code>dark_web_credential</code>, <code>new_account</code>, <code>inquiry</code></td></tr>
+          <tr><td class="field-name">title</td><td class="field-type">string</td><td>Human-readable alert title</td></tr>
+          <tr><td class="field-name">description</td><td class="field-type">string</td><td>Full alert description</td></tr>
+          <tr><td class="field-name">source</td><td class="field-type">string</td><td>Monitoring system that generated the alert</td></tr>
+          <tr><td class="field-name">status</td><td class="field-type">string</td><td><code>unread</code> | <code>read</code> | <code>dismissed</code> | <code>resolved</code></td></tr>
+          <tr><td class="field-name">detected_at</td><td class="field-type">datetime</td><td>When the threat was detected</td></tr>
+          <tr><td class="field-name">recommended_action</td><td class="field-type">string</td><td>Plain-language remediation guidance</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── 8. ERRORS ── -->
+    <div class="section" id="errors">
+      <div class="section-header">
+        <span class="section-num">08</span>
+        <h2>Error Handling</h2>
+      </div>
+
+      <p>All errors return a consistent JSON envelope with a machine-readable <code>code</code> and a human-readable <code>message</code>.</p>
+
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">Error Response Format</span><span class="code-lang">JSON</span></div>
+        <pre>{
+  <span class="hl-key">"error"</span>: {
+    <span class="hl-key">"code"</span>:       <span class="hl-str">"member_not_found"</span>,
+    <span class="hl-key">"message"</span>:    <span class="hl-str">"No member found with ID mem_invalid123"</span>,
+    <span class="hl-key">"param"</span>:      <span class="hl-str">"member_id"</span>,       <span class="hl-comment">// field that caused the error, if applicable</span>
+    <span class="hl-key">"request_id"</span>: <span class="hl-str">"req_Lm4nX8pQ"</span>       <span class="hl-comment">// include in support tickets</span>
+  }
+}</pre>
+      </div>
+
+      <h3>HTTP Status Codes</h3>
+      <table class="schema-table">
+        <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><span class="status-badge s-2xx">200</span></td><td>—</td><td>Success</td></tr>
+          <tr><td><span class="status-badge s-2xx">201</span></td><td>—</td><td>Resource created</td></tr>
+          <tr><td><span class="status-badge s-2xx">202</span></td><td>—</td><td>Accepted (async operation queued)</td></tr>
+          <tr><td><span class="status-badge s-2xx">204</span></td><td>—</td><td>No Content — successful DELETE or action with no response body</td></tr>
+          <tr><td><span class="status-badge s-4xx">400</span></td><td><code>invalid_request</code></td><td>Malformed body or missing required field</td></tr>
+          <tr><td><span class="status-badge s-4xx">401</span></td><td><code>unauthorized</code></td><td>Missing or invalid bearer token</td></tr>
+          <tr><td><span class="status-badge s-4xx">403</span></td><td><code>forbidden</code></td><td>Valid token but insufficient scope</td></tr>
+          <tr><td><span class="status-badge s-4xx">404</span></td><td><code>not_found</code></td><td>Resource does not exist</td></tr>
+          <tr><td><span class="status-badge s-4xx">409</span></td><td><code>conflict</code></td><td>Duplicate resource (e.g. email already enrolled)</td></tr>
+          <tr><td><span class="status-badge s-4xx">422</span></td><td><code>validation_error</code></td><td>Request body failed schema validation</td></tr>
+          <tr><td><span class="status-badge s-4xx">429</span></td><td><code>rate_limit_exceeded</code></td><td>Too many requests — see rate limits section</td></tr>
+          <tr><td><span class="status-badge s-5xx">500</span></td><td><code>internal_error</code></td><td>Server error — retry with exponential backoff</td></tr>
+          <tr><td><span class="status-badge s-5xx">503</span></td><td><code>service_unavailable</code></td><td>Temporary outage — check status.shieldwatch.io</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── 9. RATE LIMITS ── -->
+    <div class="section" id="limits">
+      <div class="section-header">
+        <span class="section-num">09</span>
+        <h2>Rate Limits &amp; SLAs</h2>
+      </div>
+
+      <table class="schema-table">
+        <thead><tr><th>Plan</th><th>Read Requests</th><th>Write Requests</th><th>Bulk Import</th><th>Webhooks</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Standard</strong></td><td>1,000 / min</td><td>200 / min</td><td>10,000 rows / day</td><td>10 endpoints</td></tr>
+          <tr><td><strong>Professional</strong></td><td>5,000 / min</td><td>1,000 / min</td><td>100,000 rows / day</td><td>25 endpoints</td></tr>
+          <tr><td><strong>Enterprise</strong></td><td>Unlimited</td><td>Unlimited</td><td>Unlimited</td><td>Unlimited</td></tr>
+        </tbody>
+      </table>
+
+      <p>Rate limit headers are returned on every response. ShieldWatch follows the IETF <a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener">RateLimit header fields draft</a> with legacy <code>X-RateLimit-*</code> aliases for backwards compatibility:</p>
+      <table class="schema-table">
+        <thead><tr><th>IETF Standard Header</th><th>Legacy Alias</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">RateLimit-Limit</td><td><code>X-RateLimit-Limit</code></td><td>Requests allowed per minute</td></tr>
+          <tr><td class="field-name">RateLimit-Remaining</td><td><code>X-RateLimit-Remaining</code></td><td>Requests remaining in current window</td></tr>
+          <tr><td class="field-name">RateLimit-Reset</td><td><code>X-RateLimit-Reset</code></td><td>Unix timestamp when window resets</td></tr>
+          <tr><td class="field-name">Retry-After</td><td>—</td><td>Seconds to wait after a 429 response</td></tr>
+        </tbody>
+      </table>
+
+      <h3>SLA Commitments (Enterprise)</h3>
+      <table class="schema-table">
+        <thead><tr><th>Metric</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td>API Uptime</td><td>99.9% monthly</td></tr>
+          <tr><td>Read Endpoint P95 Latency</td><td>&lt; 120ms</td></tr>
+          <tr><td>Write Endpoint P95 Latency</td><td>&lt; 300ms</td></tr>
+          <tr><td>Webhook Delivery P95</td><td>&lt; 5 seconds from event</td></tr>
+          <tr><td>Support Response (P1)</td><td>&lt; 1 hour</td></tr>
+          <tr><td>Support Response (P2/P3)</td><td>&lt; 4 hours / &lt; 1 business day</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── 10. SECURITY ── -->
+    <div class="section" id="security">
+      <div class="section-header">
+        <span class="section-num">10</span>
+        <h2>Security Considerations</h2>
+      </div>
+
+      <div class="callout danger">
+        <div class="callout-icon">🚨</div>
+        <div class="callout-body">
+          <div class="callout-title">PII Handling</div>
+          The ShieldWatch API handles sensitive PII including SSNs, financial data, and health records. All integrations must comply with applicable regulations (FCRA, GLBA, HIPAA where applicable). Consult your legal team before storing or logging API responses.
+        </div>
+      </div>
+
+      <h3>Transport Security</h3>
+      <ul>
+        <li>All API traffic requires <strong>TLS 1.2 or higher</strong> — TLS 1.0/1.1 are rejected; <strong>TLS 1.3 is preferred</strong> and negotiated by default</li>
+        <li>Certificate pinning is available for mobile SDK integrations</li>
+        <li>HSTS is enforced with a max-age of 1 year and <code>includeSubDomains</code></li>
+      </ul>
+
+      <h3>Credential Management</h3>
+      <ul>
+        <li>Rotate API keys every 90 days or immediately upon suspected compromise</li>
+        <li>Store secrets in a secrets manager (AWS Secrets Manager, HashiCorp Vault, Azure Key Vault) — never in code or environment variables in shared systems</li>
+        <li>Use separate API keys for sandbox and production environments</li>
+        <li>Scope tokens to the minimum required permissions</li>
+      </ul>
+
+      <h3>Widget Security</h3>
+      <ul>
+        <li>Widget tokens are single-use and expire in 15 minutes — never cache them</li>
+        <li>Always generate widget tokens server-side; never expose your API key or OAuth client secret to the browser</li>
+        <li>Apply <code>sandbox</code> attribute to all iframes; only add permissions you explicitly need</li>
+        <li>Set a Content Security Policy (<code>frame-src</code>) on your host page limiting iframes to <code>https://widget.shieldwatch.io</code></li>
+      </ul>
+
+      <h3>Webhook Security</h3>
+      <ul>
+        <li>Always verify the <code>SW-Signature</code> header before processing payloads</li>
+        <li>Reject payloads older than 5 minutes to prevent replay attacks</li>
+        <li>Use <code>crypto.timingSafeEqual</code> (or equivalent) for signature comparison to prevent timing attacks</li>
+        <li>Respond with <code>2xx</code> within 30 seconds — long processing should be queued asynchronously</li>
+      </ul>
+
+      <h3>Compliance</h3>
+      <div class="badge-row">
+        <span class="tag">SOC 2 Type II</span>
+        <span class="tag">ISO 27001</span>
+        <span class="tag">FCRA Compliant</span>
+        <span class="tag">GLBA Compliant</span>
+        <span class="tag">CCPA Ready</span>
+        <span class="tag">GDPR Art. 28</span>
+        <span class="tag">PCI DSS Level 1</span>
+      </div>
+    </div>
+
+    <!-- ── APPENDIX ── -->
+    <div class="section" id="appendix">
+      <div class="section-header">
+        <span class="section-num">A</span>
+        <h2>Appendix</h2>
+      </div>
+
+      <h3>Glossary</h3>
+      <table class="schema-table">
+        <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">PII</td><td>Personally Identifiable Information — data that can uniquely identify a person (SSN, email, DOB, etc.)</td></tr>
+          <tr><td class="field-name">FCRA</td><td>Fair Credit Reporting Act — US law governing how consumer credit information is collected and used</td></tr>
+          <tr><td class="field-name">PKCE</td><td>Proof Key for Code Exchange — OAuth 2.0 extension preventing authorization code interception</td></tr>
+          <tr><td class="field-name">SAML</td><td>Security Assertion Markup Language — XML-based standard for exchanging authentication data between an IdP and SP</td></tr>
+          <tr><td class="field-name">OIDC</td><td>OpenID Connect — identity layer on top of OAuth 2.0 for verifying end-user identity</td></tr>
+          <tr><td class="field-name">IdP</td><td>Identity Provider — the system that authenticates users (Okta, Azure AD, Ping)</td></tr>
+          <tr><td class="field-name">SP</td><td>Service Provider — the application relying on the IdP for authentication (ShieldWatch)</td></tr>
+          <tr><td class="field-name">HRIS</td><td>Human Resource Information System — HR platform managing employee records (Workday, ADP, etc.)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Changelog</h3>
+      <table class="schema-table">
+        <thead><tr><th>Version</th><th>Date</th><th>Changes</th></tr></thead>
+        <tbody>
+          <tr><td class="field-name">v2.2</td><td>May 2026</td><td>OAuth 2.1 redirect URI exact-match enforcement; iframe sandbox tightened to allow-top-navigation-by-user-activation; GDPR Art. 28 compliance; identity:write scope for scan endpoint; IETF RateLimit headers; OpenAPI 3.1 spec published</td></tr>
+          <tr><td class="field-name">v2.1</td><td>Jan 2026</td><td>Added OIDC PKCE flow; widget postMessage API v2; HRIS connector list updated</td></tr>
+          <tr><td class="field-name">v2.0</td><td>Jan 2026</td><td>Major version: cursor pagination, new member batch API, webhook retry logic</td></tr>
+          <tr><td class="field-name">v1.4</td><td>Sep 2025</td><td>Credit freeze endpoint added; SAML attribute mapping expanded</td></tr>
+          <tr><td class="field-name">v1.3</td><td>Jun 2025</td><td>Widget token exchange endpoint; postMessage event API introduced</td></tr>
+        </tbody>
+      </table>
+
+      <h3>OpenAPI Specification</h3>
+      <p>The ShieldWatch API is fully described by an <strong>OpenAPI 3.1</strong> specification available at:</p>
+      <div class="code-block">
+        <div class="code-header"><span class="code-title">OpenAPI 3.1 spec</span><span class="code-lang">URL</span></div>
+        <pre>https://developer.shieldwatch.io/openapi.json     <span class="hl-comment"># JSON</span>
+https://developer.shieldwatch.io/openapi.yaml     <span class="hl-comment"># YAML</span></pre>
+      </div>
+      <p>Import into Postman, Insomnia, or any OpenAPI-compatible toolchain to generate client SDKs, mock servers, or interactive docs.</p>
+
+      <h3>Support &amp; Resources</h3>
+      <div class="two-col">
+        <div class="info-card">
+          <div class="info-card-title">Developer Portal</div>
+          <p>developer.shieldwatch.io — interactive API explorer, SDKs, and code samples</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Status Page</div>
+          <p>status.shieldwatch.io — real-time uptime, incident history, and maintenance windows</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Sandbox Console</div>
+          <p>sandbox.shieldwatch.io — test environment with pre-seeded member data and synthetic alerts</p>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Support</div>
+          <p>api-support@shieldwatch.io — P1/P2 issues; include <code>request_id</code> from error responses</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      ShieldWatch API Integration Playbook v2.2 · Prepared by Luis Millan · Solution Engineer Portfolio · May 2026<br>
+      This document is a fictional portfolio artifact created to demonstrate Solution Engineering expertise for the Equifax / IDWatchdog role.
+    </div>
+
+  </div><!-- /doc -->
+</main>
+
+<script>
+// Highlight active TOC section on scroll
+const sections = document.querySelectorAll('.section, .subsection');
+const tocLinks  = document.querySelectorAll('.toc a[href^="#"]');
+
+function onScroll() {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+  });
+  tocLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+}
+
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+</script>
+
+</body>
+</html>
